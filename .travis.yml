@@ -1,54 +1,10 @@
 sudo: required
 dist: bionic
 language: python
-python: '3.7'
-services:
-  - xvfb
-  - docker
-install:
- - git clone https://github.com/QubesOS/qubes-builder ~/qubes-builder
+python: '3.6'
+install: git clone -b travis-gentoo https://github.com/fepitre/qubes-builder ~/qubes-builder
 script: ~/qubes-builder/scripts/travis-build
 env:
- - DIST_DOM0=fc31 USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
- - DISTS_VM=fc29 USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
- - DISTS_VM=fc30 USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
- - DISTS_VM=stretch USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
- - DISTS_VM=buster USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
- - DISTS_VM=centos7 USE_QUBES_REPO_VERSION=4.1 USE_QUBES_REPO_TESTING=1
-
-jobs:
-  include:
-    - name: pylint
-      install:
-       - docker build -t qrexec-test ci
-      env: DOCKER_RUN="docker run -v $TRAVIS_BUILD_DIR:$TRAVIS_BUILD_DIR -w $TRAVIS_BUILD_DIR -- qrexec-test"
-      script:
-       - $DOCKER_RUN pylint qrexec
-    - name: run-tests
-      install:
-       - pip install --quiet codecov
-       - pip install --quiet 'coverage<5.0'
-       - docker build -t qrexec-test ci
-      env: DOCKER_RUN="docker run -v $TRAVIS_BUILD_DIR:$TRAVIS_BUILD_DIR -v /tmp/.X11-unix:/tmp/.X11-unix -w $TRAVIS_BUILD_DIR -e DISPLAY=$DISPLAY -- qrexec-test"
-      script:
-       - $DOCKER_RUN ./run-tests
-       # use gcov from within the container
-       - $DOCKER_RUN find . -type f -name '*.gcno'  -execdir gcov -pb  {} +
-       - find . -type f -name '*.gcno'  -exec rm  {} +
-    - name: fuzz
-      install:
-       - sudo apt-get -y install clang
-      script:
-       - make -C fuzz test
-    - stage: deploy
-      python: '3.6'
-      script: ~/qubes-builder/scripts/travis-deploy
-
-after_success:
-  - codecov
-
-# don't build tags which are meant for code signing only
-branches:
-  except:
-    - /.*_.*/
-    - build
+ - DISTS_VM=gentoo GENTOO_MIRROR=https://mirror.notset.fr/gentoo/qubes/gnome GENTOO_MIRROR_KEY=9FA64B92F95E706BF28E2CA6484010B5CDC576E2
+ - DISTS_VM=gentoo+minimal GENTOO_MIRROR=https://mirror.notset.fr/gentoo/qubes/minimal GENTOO_MIRROR_KEY=9FA64B92F95E706BF28E2CA6484010B5CDC576E2
+ - DISTS_VM=gentoo+xfce GENTOO_MIRROR=https://mirror.notset.fr/gentoo/qubes/xfce GENTOO_MIRROR_KEY=9FA64B92F95E706BF28E2CA6484010B5CDC576E2
